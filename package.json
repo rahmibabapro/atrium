@@ -15,7 +15,8 @@
     "test:foundation": "tsx --test src/lib/admin/__tests__/page-registry.test.ts",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test \"src/**/__tests__/*.test.ts\"",
-    "db:migrate": "tsx scripts/db-migrate.ts"
+    "db:migrate": "tsx scripts/db-migrate.ts",
+    "import:xenforo": "tsx scripts/import-xenforo.ts"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.6.25",
@@ -55,5 +56,5 @@
       "sharp"
     ]
   },
-  "description": "Atrium — forkable foundation for branded community websites (Next.js)."
+  "description": "Atrium \u2014 forkable foundation for branded community websites (Next.js)."
 }
