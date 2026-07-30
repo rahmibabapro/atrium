@@ -29,6 +29,7 @@
     "gsap": "^3.15.0",
     "kysely": "^0.29.4",
     "next": "^15.4.5",
+    "nodemailer": "^9.0.3",
     "pg": "^8.22.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
@@ -38,6 +39,7 @@
     "@tailwindcss/postcss": "^4.1.11",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.17.0",
+    "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.20.0",
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7",
@@ -53,5 +55,5 @@
       "sharp"
     ]
   },
-  "description": "Atrium \u2014 forkable foundation for branded community websites (Next.js)."
+  "description": "Atrium — forkable foundation for branded community websites (Next.js)."
 }

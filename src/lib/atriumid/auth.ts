@@ -11,10 +11,32 @@ import { passkey } from "@better-auth/passkey";
 import { createAtriumIdDatabase, isPostgres } from "./db";
 import { ac, roles } from "./permissions";
 import { config as siteConfig } from "@/lib/content";
+import { sendEmail } from "@/lib/email";
 
 const database = createAtriumIdDatabase();
 const authConfig = (siteConfig as { auth?: Record<string, unknown> }).auth || {};
 const idleDays = Number(authConfig.sessionIdleDays ?? 7);
+
+/** Discord/Google sign-in switch on when their env credentials exist. */
+function socialProviders() {
+  const providers: Record<
+    string,
+    { clientId: string; clientSecret: string }
+  > = {};
+  if (process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET) {
+    providers.discord = {
+      clientId: process.env.DISCORD_CLIENT_ID,
+      clientSecret: process.env.DISCORD_CLIENT_SECRET,
+    };
+  }
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    providers.google = {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    };
+  }
+  return providers;
+}
 
 const bootstrapIds = (process.env.ATRIUM_ADMIN_USER_IDS || "")
   .split(",")
@@ -35,7 +57,25 @@ export const auth = betterAuth({
     minPasswordLength: 8,
     maxPasswordLength: 128,
     requireEmailVerification: false,
+    sendResetPassword: async ({ user, url }) => {
+      await sendEmail({
+        to: user.email,
+        subject: `Reset your ${siteConfig.brand || "Atrium"} password`,
+        text: `Someone (hopefully you) requested a password reset.\n\nReset link: ${url}\n\nIf this wasn't you, ignore this email.`,
+      });
+    },
   },
+  emailVerification: {
+    sendOnSignUp: false,
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendEmail({
+        to: user.email,
+        subject: `Verify your ${siteConfig.brand || "Atrium"} email`,
+        text: `Welcome! Confirm your email address to finish setting up your account.\n\nVerification link: ${url}`,
+      });
+    },
+  },
+  socialProviders: socialProviders(),
   session: {
     expiresIn: idleDays * 60 * 60 * 24,
     updateAge: 60 * 60 * 24,

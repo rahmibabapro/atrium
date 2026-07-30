@@ -15,11 +15,13 @@ export function HeaderChrome({
   brand,
   items,
   accountLabel,
+  unreadCount = 0,
 }: {
   lang: Lang;
   brand: string;
   items: NavItem[];
   accountLabel: string | null;
+  unreadCount?: number;
 }) {
   const headerRef = useRef<HTMLElement>(null);
   ensureGsap();
@@ -80,6 +82,20 @@ export function HeaderChrome({
           >
             {lang.toUpperCase()}
           </Link>
+          {accountLabel ? (
+            <Link
+              href="/notifications"
+              aria-label="Notifications"
+              className="relative rounded-lg px-2 py-2 text-sm transition hover:bg-[var(--atr-p-slate-100)]"
+            >
+              <span aria-hidden>🔔</span>
+              {unreadCount > 0 ? (
+                <span className="absolute -top-0.5 -right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--atr-brand)] px-1 text-[10px] font-bold text-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              ) : null}
+            </Link>
+          ) : null}
           <Link href={accountLabel ? "/account" : "/login"} className="btn btn-primary !px-3 !py-2 text-sm">
             {accountLabel || loginLabel}
           </Link>

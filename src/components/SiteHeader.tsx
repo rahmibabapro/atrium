@@ -2,6 +2,7 @@ import { HeaderChrome } from "@/components/header/HeaderChrome";
 import { getServerSession } from "@/lib/atriumid/session";
 import { site } from "@/lib/content";
 import type { Lang } from "@/lib/i18n";
+import { unreadNotificationCount } from "@/lib/notifications/service";
 
 export async function SiteHeader({ lang }: { lang: Lang }) {
   // Nav already respects site foundation (header toggle + offline/countdown).
@@ -14,6 +15,9 @@ export async function SiteHeader({ lang }: { lang: Lang }) {
     | (NonNullable<typeof session>["user"] & { username?: string | null })
     | undefined;
   const accountLabel = user?.username || user?.name || null;
+  const unread = user
+    ? await unreadNotificationCount(user.id).catch(() => 0)
+    : 0;
 
   return (
     <HeaderChrome
@@ -21,6 +25,7 @@ export async function SiteHeader({ lang }: { lang: Lang }) {
       brand={site.brand}
       items={items}
       accountLabel={accountLabel}
+      unreadCount={unread}
     />
   );
 }

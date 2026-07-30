@@ -57,10 +57,10 @@ function createKysely(driver: DbDriver): Kysely<Database> {
   });
 }
 
-async function migrateToLatest(db: Kysely<Database>) {
+async function migrateToLatest(db: Kysely<Database>, kind: DbDriver["kind"]) {
   const migrator = new Migrator({
     db: db as Kysely<unknown>,
-    provider: new StaticMigrationProvider(),
+    provider: new StaticMigrationProvider(kind),
   });
   const { error } = await migrator.migrateToLatest();
   if (error) throw error;
@@ -72,7 +72,10 @@ export async function getDb(): Promise<Kysely<Database>> {
     globalThis.__atriumDb = createKysely(getDriver());
   }
   if (!globalThis.__atriumDbReady) {
-    globalThis.__atriumDbReady = migrateToLatest(globalThis.__atriumDb).catch(
+    globalThis.__atriumDbReady = migrateToLatest(
+      globalThis.__atriumDb,
+      getDriver().kind,
+    ).catch(
       (err) => {
         globalThis.__atriumDbReady = undefined;
         throw err;

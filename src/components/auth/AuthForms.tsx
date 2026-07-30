@@ -111,7 +111,18 @@ export function RegisterForm() {
   );
 }
 
-export function LoginForm({ next = "/account" }: { next?: string }) {
+const SOCIAL_LABELS: Record<string, string> = {
+  discord: "Continue with Discord",
+  google: "Continue with Google",
+};
+
+export function LoginForm({
+  next = "/account",
+  socialProviders = [],
+}: {
+  next?: string;
+  socialProviders?: string[];
+}) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -236,6 +247,24 @@ export function LoginForm({ next = "/account" }: { next?: string }) {
       >
         Sign in with passkey
       </button>
+      {socialProviders.map((provider) => (
+        <button
+          key={provider}
+          type="button"
+          disabled={loading}
+          onClick={async () => {
+            setError(null);
+            const { error: err } = await authClient.signIn.social({
+              provider: provider as "discord" | "google",
+              callbackURL: next,
+            });
+            if (err) setError(err.message || "Social sign-in failed");
+          }}
+          className="btn mt-3 w-full border border-[var(--atr-border)] bg-white"
+        >
+          {SOCIAL_LABELS[provider] || `Continue with ${provider}`}
+        </button>
+      ))}
       <p className="mt-4 text-sm text-[var(--atr-muted)]">
         No account?{" "}
         <Link href="/register" className="text-[var(--atr-brand)]">

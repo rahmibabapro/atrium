@@ -1,5 +1,7 @@
-import type { Kysely } from "kysely";
+import { sql, type Kysely } from "kysely";
 import type { Migration, MigrationProvider } from "kysely/migration";
+
+export type DriverKind = "sqlite" | "postgres";
 
 /**
  * In-code migrations, executed in key order by Kysely's Migrator.
@@ -245,8 +247,93 @@ const migrations: Record<string, Migration> = {
   },
 };
 
+/**
+ * Full-text search is the one place the dialects diverge:
+ * SQLite gets an FTS5 shadow table maintained by triggers, Postgres gets a
+ * tsvector column with a GIN index and an equivalent trigger.
+ */
+function searchMigration(kind: DriverKind): Migration {
+  if (kind === "sqlite") {
+    return {
+      async up(db: Kysely<unknown>) {
+        await sql`
+          CREATE VIRTUAL TABLE IF NOT EXISTS forum_fts USING fts5(
+            post_id UNINDEXED,
+            thread_id UNINDEXED,
+            title,
+            body
+          )
+        `.execute(db);
+        await sql`
+          INSERT INTO forum_fts (post_id, thread_id, title, body)
+          SELECT p.id, p.thread_id, t.title, p.body
+          FROM forum_posts p JOIN forum_threads t ON t.id = p.thread_id
+        `.execute(db);
+        await sql`
+          CREATE TRIGGER IF NOT EXISTS forum_posts_fts_ai
+          AFTER INSERT ON forum_posts BEGIN
+            INSERT INTO forum_fts (post_id, thread_id, title, body)
+            VALUES (
+              new.id,
+              new.thread_id,
+              coalesce((SELECT title FROM forum_threads WHERE id = new.thread_id), ''),
+              new.body
+            );
+          END
+        `.execute(db);
+        await sql`
+          CREATE TRIGGER IF NOT EXISTS forum_posts_fts_ad
+          AFTER DELETE ON forum_posts BEGIN
+            DELETE FROM forum_fts WHERE post_id = old.id;
+          END
+        `.execute(db);
+        await sql`
+          CREATE TRIGGER IF NOT EXISTS forum_posts_fts_au
+          AFTER UPDATE OF body ON forum_posts BEGIN
+            UPDATE forum_fts SET body = new.body WHERE post_id = new.id;
+          END
+        `.execute(db);
+      },
+    };
+  }
+
+  return {
+    async up(db: Kysely<unknown>) {
+      await sql`ALTER TABLE forum_posts ADD COLUMN IF NOT EXISTS search_tsv tsvector`.execute(db);
+      await sql`
+        UPDATE forum_posts p SET search_tsv = to_tsvector('simple',
+          coalesce((SELECT title FROM forum_threads t WHERE t.id = p.thread_id), '') || ' ' || p.body)
+      `.execute(db);
+      await sql`
+        CREATE INDEX IF NOT EXISTS forum_posts_search_idx
+        ON forum_posts USING GIN (search_tsv)
+      `.execute(db);
+      await sql`
+        CREATE OR REPLACE FUNCTION forum_posts_tsv_update() RETURNS trigger AS $$
+        BEGIN
+          NEW.search_tsv := to_tsvector('simple',
+            coalesce((SELECT title FROM forum_threads t WHERE t.id = NEW.thread_id), '') || ' ' || NEW.body);
+          RETURN NEW;
+        END
+        $$ LANGUAGE plpgsql
+      `.execute(db);
+      await sql`DROP TRIGGER IF EXISTS forum_posts_tsv_trg ON forum_posts`.execute(db);
+      await sql`
+        CREATE TRIGGER forum_posts_tsv_trg
+        BEFORE INSERT OR UPDATE OF body ON forum_posts
+        FOR EACH ROW EXECUTE FUNCTION forum_posts_tsv_update()
+      `.execute(db);
+    },
+  };
+}
+
 export class StaticMigrationProvider implements MigrationProvider {
+  constructor(private kind: DriverKind) {}
+
   async getMigrations() {
-    return migrations;
+    return {
+      ...migrations,
+      "0003_forum_search": searchMigration(this.kind),
+    };
   }
 }

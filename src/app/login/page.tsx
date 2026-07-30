@@ -18,9 +18,21 @@ export default async function LoginPage({
     redirect(next.startsWith("/") ? next : "/account");
   }
 
+  const socialProviders = [
+    process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET
+      ? "discord"
+      : null,
+    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? "google"
+      : null,
+  ].filter((p): p is string => Boolean(p));
+
   return (
     <div className="container flex justify-center py-16">
-      <LoginForm next={next.startsWith("/") ? next : "/account"} />
+      <LoginForm
+        next={next.startsWith("/") ? next : "/account"}
+        socialProviders={socialProviders}
+      />
     </div>
   );
 }
