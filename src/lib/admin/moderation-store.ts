@@ -123,6 +123,27 @@ export async function queuePurge(input: {
   return row;
 }
 
+export async function getPurge(id: string): Promise<ModerationPurge | null> {
+  const db = await getDb();
+  const p = await db
+    .selectFrom("moderation_purges")
+    .selectAll()
+    .where("id", "=", id)
+    .executeTakeFirst();
+  if (!p) return null;
+  return {
+    id: p.id,
+    userId: p.user_id,
+    username: p.username ?? undefined,
+    scope: p.scope as ModerationPurge["scope"],
+    status: p.status as ModerationPurge["status"],
+    by: p.by_id,
+    byLabel: p.by_label,
+    at: p.at,
+    note: p.note ?? undefined,
+  };
+}
+
 /** Mark a queued purge as processed (done/failed) after content removal ran. */
 export async function completePurge(
   id: string,

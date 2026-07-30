@@ -8,9 +8,18 @@ import { appendAudit } from "@/lib/admin/audit";
 import { clientIp, requireStaff, roleList, staffLabel } from "@/lib/admin/guard";
 import {
   addWarning,
+  completePurge,
+  getPurge,
   queuePurge,
   readModerationStore,
 } from "@/lib/admin/moderation-store";
+import {
+  listOpenReports,
+  moderatePost,
+  purgeUserForumContent,
+  resolveReport,
+} from "@/lib/forum/service";
+import { createNotification } from "@/lib/notifications/service";
 import { packHrefSet } from "@/lib/admin/page-registry";
 import {
   formatZodError,
@@ -144,6 +153,13 @@ export async function warnUser(raw: unknown) {
     reason: input.reason,
     by: session.user.id,
     byLabel: label,
+  });
+  await createNotification({
+    userId: input.userId,
+    kind: "moderation",
+    title: "You received a moderation warning",
+    body: input.reason,
+    actorLabel: label,
   });
   await appendAudit({
     actorId: session.user.id,
@@ -290,4 +306,98 @@ export async function setUserRoleAction(
 export async function getModerationSnapshot() {
   await actorContext();
   return await readModerationStore();
+}
+
+/** Executes a queued purge against the real forum tables. */
+export async function runPurgeAction(purgeId: string) {
+  const { session, label, ip } = await actorContext();
+  const id = z.string().min(1).max(64).parse(purgeId);
+  const purge = await getPurge(id);
+  if (!purge) throw new Error("PURGE_NOT_FOUND");
+  if (purge.status !== "queued") throw new Error("PURGE_ALREADY_PROCESSED");
+
+  try {
+    const removed = await purgeUserForumContent(purge.userId, purge.scope);
+    await completePurge(id, "done");
+    await appendAudit({
+      actorId: session.user.id,
+      actorLabel: label,
+      action: "mod.purge_run",
+      target: purge.userId,
+      meta: { scope: purge.scope, ...removed },
+      ip,
+    });
+    revalidatePath("/admin/moderation");
+    return { ok: true as const, removed };
+  } catch (err) {
+    await completePurge(id, "failed");
+    revalidatePath("/admin/moderation");
+    throw err;
+  }
+}
+
+const moderatePostInput = z.object({
+  postId: z.string().min(1).max(64),
+  action: z.enum(["hide", "unhide"]),
+  reason: z.string().max(500).optional(),
+});
+
+export async function moderatePostAction(raw: unknown) {
+  const { session, label, ip } = await actorContext();
+  const input = moderatePostInput.parse(raw);
+  await moderatePost({
+    postId: input.postId,
+    action: input.action,
+    by: session.user.id,
+    reason: input.reason,
+  });
+  await appendAudit({
+    actorId: session.user.id,
+    actorLabel: label,
+    action: `mod.post_${input.action}`,
+    target: input.postId,
+    meta: input.reason ? { reason: input.reason } : undefined,
+    ip,
+  });
+  revalidatePath("/admin/moderation");
+  return { ok: true as const };
+}
+
+const resolveReportInput = z.object({
+  reportId: z.string().min(1).max(64),
+  status: z.enum(["resolved", "dismissed"]),
+  hidePostId: z.string().max(64).optional(),
+});
+
+export async function resolveReportAction(raw: unknown) {
+  const { session, label, ip } = await actorContext();
+  const input = resolveReportInput.parse(raw);
+  if (input.hidePostId) {
+    await moderatePost({
+      postId: input.hidePostId,
+      action: "hide",
+      by: session.user.id,
+      reason: "Report resolved",
+    });
+  }
+  await resolveReport({
+    reportId: input.reportId,
+    status: input.status,
+    by: session.user.id,
+  });
+  await appendAudit({
+    actorId: session.user.id,
+    actorLabel: label,
+    action: `mod.report_${input.status}`,
+    target: input.reportId,
+    meta: input.hidePostId ? { hidPost: input.hidePostId } : undefined,
+    ip,
+  });
+  revalidatePath("/admin/moderation");
+  return { ok: true as const };
+}
+
+export async function listOpenReportsAction() {
+  await actorContext();
+  return listOpenReports();
 }

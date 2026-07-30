@@ -1,15 +1,39 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
   banUserAction,
   purgeUserContent,
+  resolveReportAction,
+  runPurgeAction,
   unbanUserAction,
   warnUser,
 } from "@/app/admin/actions";
 import type { ModerationStore } from "@/lib/admin/moderation-types";
 
-export function ModerationPanel({ initial }: { initial: ModerationStore }) {
+export type OpenReport = {
+  id: string;
+  reason: string;
+  at: string;
+  post: {
+    id: string;
+    excerpt: string;
+    authorId: string;
+    authorLabel: string;
+    hidden: boolean;
+  } | null;
+  thread: { slug: string; title: string } | null;
+};
+
+export function ModerationPanel({
+  initial,
+  reports = [],
+}: {
+  initial: ModerationStore;
+  reports?: OpenReport[];
+}) {
+  const router = useRouter();
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [userId, setUserId] = useState("");
@@ -33,8 +57,8 @@ export function ModerationPanel({ initial }: { initial: ModerationStore }) {
       <section className="rounded-2xl border border-[var(--atr-border)] bg-white p-6">
         <h2 className="text-lg font-bold tracking-tight">Take action</h2>
         <p className="mt-1 text-sm text-[var(--atr-sub)]">
-          Server-authorized. Bans use Better Auth admin APIs. Purge queues until
-          forum/Pulse stores are wired.
+          Server-authorized. Bans use Better Auth admin APIs. Purges queue
+          first, then run against the real forum tables from the list below.
         </p>
         <div className="mt-4 space-y-3">
           <label className="block text-sm font-medium">
@@ -123,6 +147,72 @@ export function ModerationPanel({ initial }: { initial: ModerationStore }) {
 
       <section className="space-y-6">
         <div className="rounded-2xl border border-[var(--atr-border)] bg-white p-6">
+          <h3 className="font-semibold">Open reports</h3>
+          <ul className="mt-3 max-h-72 space-y-3 overflow-auto text-sm">
+            {reports.map((r) => (
+              <li key={r.id} className="border-b border-[var(--atr-border)] pb-3">
+                {r.thread ? (
+                  <a
+                    href={`/threads/${r.thread.slug}`}
+                    target="_blank"
+                    className="font-medium text-[var(--atr-brand)] hover:underline"
+                  >
+                    {r.thread.title}
+                  </a>
+                ) : (
+                  <span className="text-[var(--atr-muted)]">Post removed</span>
+                )}
+                <p className="mt-1 text-[var(--atr-sub)]">
+                  “{r.post?.excerpt || "—"}” — {r.post?.authorLabel}
+                </p>
+                <p className="mt-1 text-xs text-[var(--atr-muted)]">
+                  Report: {r.reason} · {new Date(r.at).toLocaleString()}
+                </p>
+                <div className="mt-2 flex gap-2">
+                  {r.post && !r.post.hidden ? (
+                    <button
+                      type="button"
+                      disabled={pending}
+                      className="btn border border-red-200 bg-red-50 !py-1 text-xs text-red-700"
+                      onClick={() =>
+                        run(async () => {
+                          await resolveReportAction({
+                            reportId: r.id,
+                            status: "resolved",
+                            hidePostId: r.post!.id,
+                          });
+                          router.refresh();
+                        }, "Post hidden, report resolved")
+                      }
+                    >
+                      Hide post + resolve
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    disabled={pending}
+                    className="btn border border-[var(--atr-border)] bg-white !py-1 text-xs"
+                    onClick={() =>
+                      run(async () => {
+                        await resolveReportAction({
+                          reportId: r.id,
+                          status: "dismissed",
+                        });
+                        router.refresh();
+                      }, "Report dismissed")
+                    }
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </li>
+            ))}
+            {!reports.length ? (
+              <li className="text-[var(--atr-muted)]">No open reports.</li>
+            ) : null}
+          </ul>
+        </div>
+        <div className="rounded-2xl border border-[var(--atr-border)] bg-white p-6">
           <h3 className="font-semibold">Recent warnings</h3>
           <ul className="mt-3 max-h-56 space-y-2 overflow-auto text-sm">
             {initial.warnings.slice(0, 20).map((w) => (
@@ -148,6 +238,21 @@ export function ModerationPanel({ initial }: { initial: ModerationStore }) {
                 <p className="text-[var(--atr-sub)]">
                   {p.scope} · {p.status}
                 </p>
+                {p.status === "queued" ? (
+                  <button
+                    type="button"
+                    disabled={pending}
+                    className="btn mt-1 border border-red-200 bg-red-50 !py-1 text-xs text-red-700"
+                    onClick={() =>
+                      run(async () => {
+                        await runPurgeAction(p.id);
+                        router.refresh();
+                      }, "Purge executed")
+                    }
+                  >
+                    Run purge now
+                  </button>
+                ) : null}
               </li>
             ))}
             {!initial.purges.length ? (

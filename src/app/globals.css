@@ -192,6 +192,42 @@ input {
   border-radius: 0.35rem;
 }
 
+/* Forum post rendering (output of renderPostHtml) */
+.post-body p + p {
+  margin-top: 0.75rem;
+}
+
+.post-body a {
+  color: var(--atr-brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.post-body .post-quote {
+  margin: 0.75rem 0;
+  border-left: 3px solid var(--atr-border);
+  padding-left: 0.85rem;
+  color: var(--atr-muted);
+}
+
+.post-body .post-code {
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  border-radius: 0.6rem;
+  background: var(--atr-p-slate-100);
+  padding: 0.75rem 0.9rem;
+  font-family: var(--atr-font-mono);
+  font-size: 0.85em;
+}
+
+.post-body .post-code-inline {
+  font-family: var(--atr-font-mono);
+  font-size: 0.9em;
+  background: var(--atr-p-slate-100);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.35rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
