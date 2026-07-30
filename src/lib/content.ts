@@ -150,7 +150,7 @@ export function wikiPageBySlug(slug: string): WikiPage | undefined {
   return allWikiPages().find((p) => p.slug === slug);
 }
 
-export function homeCopy(lang: Lang) {
+export function homeCopy(_lang: Lang) {
   return config.home;
 }
 

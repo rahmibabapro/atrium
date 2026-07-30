@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import {
   CONSENT_STORAGE,
   allowsAds,
@@ -27,22 +27,25 @@ function readConsent(): ConsentLevel {
   }
 }
 
+function subscribeConsent(onChange: () => void) {
+  window.addEventListener("atr-consent", onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener("atr-consent", onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+
+/** Hydration-safe consent value that tracks the banner + other tabs. */
+function useConsent(): ConsentLevel {
+  return useSyncExternalStore(subscribeConsent, readConsent, () => "unknown");
+}
+
 export function GoogleTags({ google }: { google?: GoogleIntegrations }) {
-  const [consent, setConsent] = useState<ConsentLevel>("unknown");
+  const consent = useConsent();
   const analyticsId = google?.analyticsId;
   const adsenseClient = google?.adsenseClient;
   const adsOn = Boolean(google?.adsenseEnabled && adsenseClient);
-
-  useEffect(() => {
-    setConsent(readConsent());
-    const on = () => setConsent(readConsent());
-    window.addEventListener("atr-consent", on);
-    window.addEventListener("storage", on);
-    return () => {
-      window.removeEventListener("atr-consent", on);
-      window.removeEventListener("storage", on);
-    };
-  }, []);
 
   useEffect(() => {
     if (!analyticsId || !allowsGoogleAnalytics(consent)) return;
@@ -62,10 +65,14 @@ export function GoogleTags({ google }: { google?: GoogleIntegrations }) {
 
   return (
     <>
-      <Script id="google-consent-default" strategy="beforeInteractive">
-        {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
-gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',wait_for_update:500});`}
-      </Script>
+      {/* Inline so the consent default runs during HTML parse, before any tag loads. */}
+      <script
+        id="google-consent-default"
+        dangerouslySetInnerHTML={{
+          __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
+gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',wait_for_update:500});`,
+        }}
+      />
       {analyticsId && allowsGoogleAnalytics(consent) ? (
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${analyticsId}`}
@@ -94,14 +101,7 @@ export function AdSenseUnit({
   slot?: string;
   className?: string;
 }) {
-  const [consent, setConsent] = useState<ConsentLevel>("unknown");
-
-  useEffect(() => {
-    setConsent(readConsent());
-    const on = () => setConsent(readConsent());
-    window.addEventListener("atr-consent", on);
-    return () => window.removeEventListener("atr-consent", on);
-  }, []);
+  const consent = useConsent();
 
   useEffect(() => {
     if (!client || !slot || !allowsAds(consent)) return;

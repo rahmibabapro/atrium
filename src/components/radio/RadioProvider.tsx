@@ -67,6 +67,8 @@ export function RadioProvider({
     playingRef.current = playing;
   }, [playing]);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- one-time hydration-safe
+     restore from localStorage; server render has no storage to read from. */
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -82,6 +84,7 @@ export function RadioProvider({
       /* ignore */
     }
   }, [stations]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     const payload: Persisted = { stationId, volume, muted, minimized };

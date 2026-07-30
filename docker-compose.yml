@@ -1,0 +1,40 @@
+# Atrium self-hosting compose.
+# Default: single container with SQLite volume (zero config).
+# Production: enable the postgres profile and set ATRIUM_DATABASE_URL.
+#
+#   docker compose up -d                          # SQLite
+#   docker compose --profile postgres up -d       # Postgres
+
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      ATRIUM_DB_PATH: /app/data/atrium.sqlite
+      # ATRIUM_DATABASE_URL: postgres://atrium:atrium@db:5432/atrium
+    volumes:
+      - atrium_data:/app/data
+    restart: unless-stopped
+
+  db:
+    image: postgres:17-alpine
+    profiles: ["postgres"]
+    environment:
+      POSTGRES_USER: atrium
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atrium}
+      POSTGRES_DB: atrium
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atrium"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  atrium_data:
+  postgres_data:

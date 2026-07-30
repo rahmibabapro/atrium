@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import {
   CONSENT_COOKIE,
   CONSENT_STORAGE,
@@ -18,21 +18,32 @@ function persist(level: Exclude<ConsentLevel, "unknown">) {
   window.dispatchEvent(new CustomEvent("atr-consent", { detail: level }));
 }
 
-export function ConsentBanner() {
-  const [open, setOpen] = useState(false);
+function subscribeConsent(onChange: () => void) {
+  window.addEventListener("atr-consent", onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener("atr-consent", onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
 
-  useEffect(() => {
-    const current = parseConsent(
-      (() => {
-        try {
-          return localStorage.getItem(CONSENT_STORAGE);
-        } catch {
-          return null;
-        }
-      })(),
-    );
-    setOpen(current === "unknown");
-  }, []);
+function readStoredConsent(): ConsentLevel {
+  try {
+    return parseConsent(localStorage.getItem(CONSENT_STORAGE));
+  } catch {
+    return "unknown";
+  }
+}
+
+export function ConsentBanner() {
+  // Server snapshot pretends consent exists so the banner never flashes during SSR.
+  const stored = useSyncExternalStore(
+    subscribeConsent,
+    readStoredConsent,
+    () => "necessary" as ConsentLevel,
+  );
+  const [dismissed, setDismissed] = useState(false);
+  const open = stored === "unknown" && !dismissed;
 
   if (!open) return null;
 
@@ -55,7 +66,7 @@ export function ConsentBanner() {
             className="btn border border-[var(--atr-border)] bg-white !py-2 text-xs"
             onClick={() => {
               persist("necessary");
-              setOpen(false);
+              setDismissed(true);
             }}
           >
             Necessary only
@@ -65,7 +76,7 @@ export function ConsentBanner() {
             className="btn border border-[var(--atr-border)] bg-white !py-2 text-xs"
             onClick={() => {
               persist("analytics");
-              setOpen(false);
+              setDismissed(true);
             }}
           >
             Analytics
@@ -75,7 +86,7 @@ export function ConsentBanner() {
             className="btn btn-primary !py-2 text-xs"
             onClick={() => {
               persist("all");
-              setOpen(false);
+              setDismissed(true);
             }}
           >
             Accept all
