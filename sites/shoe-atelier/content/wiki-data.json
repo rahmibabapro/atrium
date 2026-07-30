@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "updatedAt": "2026-07-30",
+    "version": 1,
+    "banner": "Solecraft care & fit guide"
+  },
+  "glossary": {
+    "IC": "In character (unused here)",
+    "SKU": "Stock keeping unit"
+  },
+  "groups": [
+    {
+      "id": "start",
+      "title": "Start",
+      "pages": [
+        {
+          "slug": "joining-the-server",
+          "title": "Getting started",
+          "lead": "Create an account and pick your first silhouette.",
+          "tags": [
+            "start"
+          ],
+          "sections": [
+            {
+              "id": "how",
+              "title": "How it works",
+              "body": [
+                "Register on the site.",
+                "Pick a silhouette in Shop.",
+                "Ask fit questions in Community."
+              ]
+            }
+          ]
+        },
+        {
+          "slug": "faq",
+          "title": "FAQ",
+          "lead": "Sizing and shipping.",
+          "sections": [
+            {
+              "id": "size",
+              "title": "Sizing",
+              "body": [
+                "Use the brannock-style guide in your account.",
+                "Half sizes: round up for boots."
+              ]
+            }
+          ]
+        },
+        {
+          "slug": "guilds",
+          "title": "Workshops",
+          "lead": "Maker circles (optional module).",
+          "sections": [
+            {
+              "id": ":intro",
+              "title": "What is a workshop?",
+              "body": [
+                "Optional community circles for makers and collectors."
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

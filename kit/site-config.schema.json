@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atrium.local/kit/site-config.schema.json",
+  "title": "Atrium Site Config",
+  "type": "object",
+  "required": ["id", "brand", "theme", "features", "nav", "home", "meta"],
+  "properties": {
+    "id": { "type": "string" },
+    "brand": { "type": "string" },
+    "tagline": { "type": "object" },
+    "domain": { "type": "string" },
+    "languages": { "type": "array", "items": { "type": "string" } },
+    "defaultLanguage": { "type": "string" },
+    "theme": {
+      "type": "object",
+      "required": ["brand", "brandHover", "cta", "ctaText", "night"],
+      "properties": {
+        "brand": { "type": "string" },
+        "brandHover": { "type": "string" },
+        "gold": { "type": "string" },
+        "cta": { "type": "string" },
+        "ctaText": { "type": "string" },
+        "night": { "type": "string" },
+        "fontBody": { "type": "string" },
+        "fontDisplay": { "type": "string" }
+      }
+    },
+    "features": {
+      "type": "object",
+      "additionalProperties": { "type": "boolean" }
+    },
+    "nav": { "type": "array" },
+    "footer": { "type": "array" },
+    "meta": { "type": "object" },
+    "modules": { "type": "object" },
+    "home": { "type": "object" },
+    "primaryCta": { "type": "object" }
+  }
+}

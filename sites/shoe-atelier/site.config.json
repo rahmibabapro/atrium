@@ -1,0 +1,352 @@
+{
+  "$schema": "../../kit/site-config.schema.json",
+  "id": "shoe-atelier",
+  "brand": "Solecraft Atelier",
+  "tagline": {
+    "tr": "El yapımı ayakkabı ve zanaat topluluğu",
+    "en": "Handmade shoes and craft community",
+    "es": "Zapatos artesanales y comunidad"
+  },
+  "domain": "solecraft.example",
+  "primaryCta": {
+    "tr": "Koleksiyonu gör",
+    "en": "View collection",
+    "es": "Ver colección"
+  },
+  "languages": [
+    "tr",
+    "en"
+  ],
+  "defaultLanguage": "en",
+  "theme": {
+    "brand": "#1f2937",
+    "brandHover": "#111827",
+    "gold": "#b45309",
+    "cta": "#f5f0e8",
+    "ctaText": "#1f2937",
+    "night": "#111827",
+    "fontBody": "Poppins",
+    "fontDisplay": "Poppins"
+  },
+  "features": {
+    "home": true,
+    "forums": true,
+    "wiki": true,
+    "map": false,
+    "guilds": false,
+    "store": true,
+    "help": true,
+    "support": true,
+    "members": true,
+    "pulse": true,
+    "events": false,
+    "search": true,
+    "radio": false
+  },
+  "nav": [
+    {
+      "href": "/",
+      "label": {
+        "tr": "Anasayfa",
+        "en": "Home",
+        "es": "Inicio"
+      },
+      "feature": "home"
+    },
+    {
+      "href": "/store",
+      "label": {
+        "tr": "Mağaza",
+        "en": "Shop",
+        "es": "Tienda"
+      },
+      "feature": "store"
+    },
+    {
+      "href": "/wiki",
+      "label": {
+        "tr": "Rehber",
+        "en": "Guide",
+        "es": "Guía"
+      },
+      "feature": "wiki"
+    },
+    {
+      "href": "/forums",
+      "label": {
+        "tr": "Topluluk",
+        "en": "Community",
+        "es": "Comunidad"
+      },
+      "feature": "forums"
+    },
+    {
+      "href": "/support",
+      "label": {
+        "tr": "Destek",
+        "en": "Support",
+        "es": "Soporte"
+      },
+      "feature": "support"
+    }
+  ],
+  "footer": [
+    {
+      "href": "/",
+      "label": {
+        "tr": "Ev",
+        "en": "Home",
+        "es": "Inicio"
+      }
+    },
+    {
+      "href": "/store",
+      "label": {
+        "tr": "Mağaza",
+        "en": "Shop",
+        "es": "Tienda"
+      }
+    },
+    {
+      "href": "/wiki",
+      "label": {
+        "tr": "Rehber",
+        "en": "Guide",
+        "es": "Guía"
+      }
+    },
+    {
+      "href": "/legal/privacy",
+      "label": {
+        "tr": "Gizlilik",
+        "en": "Privacy",
+        "es": "Privacidad"
+      }
+    },
+    {
+      "href": "/misc/contact",
+      "label": {
+        "tr": "İletişim",
+        "en": "Contact",
+        "es": "Contacto"
+      }
+    }
+  ],
+  "meta": {
+    "ip": "",
+    "versionLabel": "Atelier 1.0",
+    "yearLabel": "Craft Season",
+    "discord": "https://discord.gg/example",
+    "storeCurrencyLabel": "Credit"
+  },
+  "auth": {
+    "passkeys": true,
+    "password": true,
+    "mfaRequiredForStaff": true,
+    "social": [
+      "google"
+    ],
+    "sessionIdleDays": 14,
+    "allowGameBridge": false
+  },
+  "modules": {
+    "wikiLabel": {
+      "tr": "Rehber",
+      "en": "Guide",
+      "es": "Guía"
+    },
+    "mapLabel": {
+      "tr": "Harita",
+      "en": "Map",
+      "es": "Mapa"
+    },
+    "guildsLabel": {
+      "tr": "Atölyeler",
+      "en": "Workshops",
+      "es": "Talleres"
+    },
+    "pulseLabel": {
+      "tr": "Inbox",
+      "en": "Inbox",
+      "es": "Inbox"
+    }
+  },
+  "home": {
+    "heroImage": "/assets/home/hero-atelier.png",
+    "heroSub": {
+      "tr": "Solecraft Atelier — ölçülü taban, dürüst deri, zanaatkâr topluluğu. Fork örneği: bu paket Atrium’i ayakkabı markasına çevirir.",
+      "en": "Solecraft Atelier — honest leather, fitted soles, maker community. Fork demo: this pack turns Atrium into a shoe brand site.",
+      "es": "Solecraft Atelier — cuero honesto y comunidad artesanal. Demo de fork del Atrium."
+    },
+    "stepsTag": {
+      "tr": "3 adım",
+      "en": "3 steps",
+      "es": "3 pasos"
+    },
+    "stepsTitle": {
+      "tr": "Nasıl başlarım?",
+      "en": "How do I start?",
+      "es": "¿Cómo empiezo?"
+    },
+    "stepsDesc": {
+      "tr": "Hesap aç, ölçülerini gir, ilk çiftini seç.",
+      "en": "Create an account, enter your size, pick your first pair.",
+      "es": "Crea una cuenta, indica tu talla y elige tu primer par."
+    },
+    "steps": [
+      {
+        "href": "/register",
+        "image": "/assets/home/steps/step-join.png",
+        "title": {
+          "tr": "Üye ol",
+          "en": "Join",
+          "es": "Únete"
+        },
+        "text": {
+          "tr": "Atelier hesabını oluştur.",
+          "en": "Create your atelier account.",
+          "es": "Crea tu cuenta del atelier."
+        }
+      },
+      {
+        "href": "/store",
+        "image": "/assets/home/steps/step-collection.png",
+        "title": {
+          "tr": "Koleksiyon",
+          "en": "Collection",
+          "es": "Colección"
+        },
+        "text": {
+          "tr": "Sneaker, boot ve loafer hatlarını incele.",
+          "en": "Browse sneakers, boots, and loafers.",
+          "es": "Explora sneakers, botas y loafers."
+        }
+      }
+    ],
+    "stepsCta": {
+      "tr": "Mağazaya git",
+      "en": "Go to shop",
+      "es": "Ir a la tienda"
+    },
+    "newsTag": {
+      "tr": "Atölyeden",
+      "en": "From the bench",
+      "es": "Del taller"
+    },
+    "newsTitle": {
+      "tr": "Yeni düşenler",
+      "en": "New drops",
+      "es": "Nuevos drops"
+    },
+    "newsDesc": {
+      "tr": "Malzeme notları ve sınırlı üretim.",
+      "en": "Material notes and limited runs.",
+      "es": "Notas de material y ediciones limitadas."
+    },
+    "news": [
+      {
+        "href": "/wiki",
+        "title": {
+          "tr": "Bakım rehberi",
+          "en": "Care guide",
+          "es": "Guía de cuidado"
+        },
+        "blurb": {
+          "tr": "Deri, süet ve taban bakımı.",
+          "en": "Leather, suede, and sole care.",
+          "es": "Cuidado de cuero, ante y suela."
+        },
+        "image": "/assets/home/news/news-care.png"
+      },
+      {
+        "href": "/store",
+        "title": {
+          "tr": "Drop 01",
+          "en": "Drop 01",
+          "es": "Drop 01"
+        },
+        "blurb": {
+          "tr": "Şehir tabanı — sınırlı 120 çift.",
+          "en": "City sole — limited 120 pairs.",
+          "es": "Suela city — 120 pares."
+        },
+        "image": "/assets/home/news/news-drop.png"
+      },
+      {
+        "href": "/forums",
+        "title": {
+          "tr": "Topluluk",
+          "en": "Community",
+          "es": "Comunidad"
+        },
+        "blurb": {
+          "tr": "Fit tavsiyesi ve fotoğraflar.",
+          "en": "Fit advice and fit pics.",
+          "es": "Consejos de talla y fotos."
+        },
+        "image": "/assets/home/news/news-community.png"
+      }
+    ],
+    "pathsTitle": {
+      "tr": "Silüetler",
+      "en": "Silhouettes",
+      "es": "Siluetas"
+    },
+    "paths": [
+      {
+        "title": {
+          "tr": "Runner",
+          "en": "Runner",
+          "es": "Runner"
+        },
+        "blurb": {
+          "tr": "Günlük tempolu taban.",
+          "en": "Daily tempo sole.",
+          "es": "Suela de ritmo diario."
+        },
+        "image": "/assets/home/characters/silhouette-runner.png"
+      },
+      {
+        "title": {
+          "tr": "Boot",
+          "en": "Boot",
+          "es": "Bota"
+        },
+        "blurb": {
+          "tr": "Yağmur ve uzun yürüyüş.",
+          "en": "Rain and long walks.",
+          "es": "Lluvia y caminatas."
+        },
+        "image": "/assets/home/characters/silhouette-boot.png"
+      },
+      {
+        "title": {
+          "tr": "Loafer",
+          "en": "Loafer",
+          "es": "Loafer"
+        },
+        "blurb": {
+          "tr": "Ofis ve akşam.",
+          "en": "Office and evening.",
+          "es": "Oficina y noche."
+        },
+        "image": "/assets/home/characters/silhouette-loafer.png"
+      }
+    ],
+    "discordTitle": {
+      "tr": "Atelier Discord",
+      "en": "Atelier Discord",
+      "es": "Discord del atelier"
+    },
+    "discordDesc": {
+      "tr": "Drop duyuruları ve fit sohbeti.",
+      "en": "Drop alerts and fit talk.",
+      "es": "Avisos de drops y tallas."
+    },
+    "discordCta": {
+      "tr": "Katıl",
+      "en": "Join",
+      "es": "Unirse"
+    }
+  }
+}

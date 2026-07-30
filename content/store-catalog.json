@@ -1,0 +1,44 @@
+{
+  "currency": "Credit",
+  "hero": {
+    "eyebrow": { "tr": "Mağaza", "en": "Shop", "es": "Tienda" },
+    "title": { "tr": "Atölye koleksiyonu", "en": "Atelier collection", "es": "Colección atelier" },
+    "subtitle": {
+      "tr": "Demo vitrin — Atrium store UX (Medusa/Commerce kalıpları).",
+      "en": "Demo storefront — Atrium store UX (Medusa/Commerce patterns).",
+      "es": "Vitrina demo — UX de tienda Atrium."
+    }
+  },
+  "categories": [
+    { "id": "all", "label": { "tr": "Tümü", "en": "All", "es": "Todo" } },
+    { "id": "sneakers", "label": { "tr": "Sneaker", "en": "Sneakers", "es": "Sneakers" } },
+    { "id": "boots", "label": { "tr": "Bot", "en": "Boots", "es": "Botas" } }
+  ],
+  "featuredId": "sole-01",
+  "products": [
+    {
+      "id": "sole-01",
+      "title": { "tr": "Oak Runner", "en": "Oak Runner", "es": "Oak Runner" },
+      "blurb": { "tr": "Günlük deri sneaker", "en": "Everyday leather sneaker", "es": "Sneaker de cuero" },
+      "category": "sneakers",
+      "priceLabel": { "tr": "₺4.900", "en": "$189", "es": "€179" },
+      "image": "/assets/home/hero-castle.webp",
+      "popular": true,
+      "badge": { "tr": "Yeni", "en": "New", "es": "Nuevo" }
+    },
+    {
+      "id": "sole-02",
+      "title": { "tr": "Forge Boot", "en": "Forge Boot", "es": "Forge Boot" },
+      "blurb": { "tr": "Yağmur ve şehir için bot", "en": "City weather boot", "es": "Bota urbana" },
+      "category": "boots",
+      "priceLabel": { "tr": "₺6.200", "en": "$239", "es": "€229" },
+      "image": "/assets/home/hero-castle-light.webp",
+      "popular": false
+    }
+  ],
+  "notes": {
+    "tr": "Demo katalog — ödeme yok.",
+    "en": "Demo catalog — no checkout.",
+    "es": "Catálogo demo — sin checkout."
+  }
+}

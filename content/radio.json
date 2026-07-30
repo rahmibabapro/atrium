@@ -1,0 +1,14 @@
+{
+  "dock": false,
+  "title": {
+    "tr": "Radyo",
+    "en": "Radio",
+    "es": "Radio"
+  },
+  "lead": {
+    "tr": "Bu pakette radyo kapalı.",
+    "en": "Radio is disabled in this pack.",
+    "es": "La radio está desactivada en este pack."
+  },
+  "stations": []
+}

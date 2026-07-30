@@ -1,0 +1,49 @@
+{
+  "name": "atrium",
+  "version": "0.1.0",
+  "private": false,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "parity": "node scripts/parity-check.mjs",
+    "site:use": "node scripts/use-site.mjs",
+    "site:new": "node scripts/new-site.mjs",
+    "site:shoe": "node scripts/use-site.mjs shoe-atelier",
+    "atriumid:migrate": "pnpm dlx @better-auth/cli@latest migrate --config src/lib/atriumid/auth.ts -y",
+    "test:foundation": "pnpm dlx tsx --test src/lib/admin/__tests__/page-registry.test.ts"
+  },
+  "dependencies": {
+    "@better-auth/passkey": "^1.6.25",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@gsap/react": "^2.1.2",
+    "better-auth": "^1.6.25",
+    "better-sqlite3": "^12.4.1",
+    "clsx": "^2.1.1",
+    "gsap": "^3.15.0",
+    "mysql2": "^3.23.2",
+    "next": "^15.4.5",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "zod": "^4.0.14"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.17.0",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.9.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "sharp"
+    ]
+  },
+  "description": "Atrium \u2014 forkable foundation for branded community websites (Next.js)."
+}

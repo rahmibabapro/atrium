@@ -1,0 +1,55 @@
+{
+  "forumCategories": [
+    {
+      "id": "announcements",
+      "title": {
+        "tr": "Duyurular",
+        "en": "Announcements",
+        "es": "Anuncios"
+      },
+      "forums": [
+        {
+          "slug": "general-announcements",
+          "title": {
+            "tr": "Genel",
+            "en": "General",
+            "es": "General"
+          }
+        }
+      ]
+    },
+    {
+      "id": "community",
+      "title": {
+        "tr": "Topluluk",
+        "en": "Community",
+        "es": "Comunidad"
+      },
+      "forums": [
+        {
+          "slug": "current-topics",
+          "title": {
+            "tr": "Sohbet",
+            "en": "Talk",
+            "es": "Charla"
+          }
+        }
+      ]
+    }
+  ],
+  "pinnedThreads": [
+    {
+      "slug": "care-basics.1",
+      "title": "Leather care basics"
+    },
+    {
+      "slug": "fit-check.2",
+      "title": "Fit check photos"
+    }
+  ],
+  "membersSample": [
+    "atelier.1",
+    "maker.2",
+    "fitmod.3"
+  ]
+}
