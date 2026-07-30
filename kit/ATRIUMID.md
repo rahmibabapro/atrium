@@ -39,7 +39,7 @@ ATRIUM_DB_PATH=./data/atriumid.sqlite
 pnpm atriumid:migrate   # creates Better Auth + plugin tables
 ```
 
-Production: set `ATRIUM_DATABASE_URL=mysql://…` and `ATRIUM_GAME_SECRET` for the trusted game bridge.
+Production: set `ATRIUM_DATABASE_URL=postgres://…` and `ATRIUM_GAME_SECRET` for the trusted game bridge.
 
 ### Game link flow
 

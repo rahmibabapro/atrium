@@ -1,5 +1,4 @@
-import fs from "node:fs";
-import path from "node:path";
+import { getDb, newId, nowIso } from "@/lib/db";
 
 export type AuditEvent = {
   id: string;
@@ -12,14 +11,13 @@ export type AuditEvent = {
   ip?: string;
 };
 
-const auditPath = () =>
-  path.join(process.cwd(), "data", "admin-audit.jsonl");
-
-/** Append-only audit log (file). Never truncates from the UI. */
-export function appendAudit(event: Omit<AuditEvent, "id" | "at"> & { at?: string }) {
+/** Append-only audit log (database). Never truncated from the UI. */
+export async function appendAudit(
+  event: Omit<AuditEvent, "id" | "at"> & { at?: string },
+): Promise<AuditEvent> {
   const full: AuditEvent = {
-    id: `aud_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
-    at: event.at || new Date().toISOString(),
+    id: newId(),
+    at: event.at || nowIso(),
     actorId: event.actorId,
     actorLabel: event.actorLabel,
     action: event.action,
@@ -27,25 +25,39 @@ export function appendAudit(event: Omit<AuditEvent, "id" | "at"> & { at?: string
     meta: event.meta,
     ip: event.ip,
   };
-  const file = auditPath();
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.appendFileSync(file, `${JSON.stringify(full)}\n`, "utf8");
+  const db = await getDb();
+  await db
+    .insertInto("audit_log")
+    .values({
+      id: full.id,
+      at: full.at,
+      actor_id: full.actorId,
+      actor_label: full.actorLabel,
+      action: full.action,
+      target: full.target ?? null,
+      meta: full.meta ? JSON.stringify(full.meta) : null,
+      ip: full.ip ?? null,
+    })
+    .execute();
   return full;
 }
 
-export function readAudit(limit = 100): AuditEvent[] {
-  const file = auditPath();
-  if (!fs.existsSync(file)) return [];
-  const lines = fs.readFileSync(file, "utf8").trim().split("\n").filter(Boolean);
-  return lines
-    .slice(-limit)
-    .map((line) => {
-      try {
-        return JSON.parse(line) as AuditEvent;
-      } catch {
-        return null;
-      }
-    })
-    .filter(Boolean)
-    .reverse() as AuditEvent[];
+export async function readAudit(limit = 100): Promise<AuditEvent[]> {
+  const db = await getDb();
+  const rows = await db
+    .selectFrom("audit_log")
+    .selectAll()
+    .orderBy("at", "desc")
+    .limit(limit)
+    .execute();
+  return rows.map((r) => ({
+    id: r.id,
+    at: r.at,
+    actorId: r.actor_id,
+    actorLabel: r.actor_label,
+    action: r.action,
+    target: r.target ?? undefined,
+    meta: r.meta ? (JSON.parse(r.meta) as Record<string, unknown>) : undefined,
+    ip: r.ip ?? undefined,
+  }));
 }

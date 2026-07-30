@@ -5,7 +5,10 @@ import { RadioMount } from "@/components/radio/RadioMount";
 import { OrganizationJsonLd } from "@/components/seo/JsonLd";
 import { SiteShell } from "@/components/SiteShell";
 import { PublicChrome } from "@/components/site/PublicChrome";
-import { readSiteOverrides } from "@/lib/admin/site-overrides";
+import {
+  readSiteOverrides,
+  warmSiteOverrides,
+} from "@/lib/admin/site-overrides";
 import { resolveLang } from "@/lib/i18n";
 import { defaultLang, site, themeStyle } from "@/lib/content";
 import { fontBody, fontMono } from "@/lib/fonts";
@@ -52,6 +55,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Ensures the sync readSiteOverrides() cache is fresh for this render tree.
+  await warmSiteOverrides().catch(() => undefined);
   const jar = await cookies();
   const lang = resolveLang(jar.get("aom_lang")?.value, defaultLang());
   return (

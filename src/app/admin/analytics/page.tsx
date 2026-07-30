@@ -8,7 +8,7 @@ import { siteOrigin } from "@/lib/site-url";
 
 export default async function AdminAnalyticsPage() {
   await requireStaff({ redirectTo: "/admin/analytics" });
-  const summary = analyticsSummary();
+  const summary = await analyticsSummary();
   const google = readSiteOverrides().google;
   const origin = siteOrigin();
 

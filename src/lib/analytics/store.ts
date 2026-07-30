@@ -1,76 +1,7 @@
-import fs from "node:fs";
-import path from "node:path";
-import { z } from "zod";
-
-const pageStatSchema = z.object({
-  views: z.number().int().nonnegative(),
-  dwellMs: z.number().nonnegative(),
-  clicks: z.number().int().nonnegative(),
-});
-
-const sessionSchema = z.object({
-  firstAt: z.string(),
-  lastAt: z.string(),
-  dwellMs: z.number().nonnegative(),
-  paths: z.array(z.string()).max(80),
-  userId: z.string().optional(),
-  userLabel: z.string().optional(),
-  pageviews: z.number().int().nonnegative(),
-});
-
-const clickSchema = z.object({
-  at: z.string(),
-  path: z.string(),
-  target: z.string().max(200),
-  sessionId: z.string(),
-  userId: z.string().optional(),
-});
-
-const storeSchema = z.object({
-  pages: z.record(z.string(), pageStatSchema).default({}),
-  sessions: z.record(z.string(), sessionSchema).default({}),
-  clicks: z.array(clickSchema).max(800).default([]),
-  totals: z
-    .object({
-      pageviews: z.number().int().nonnegative(),
-      sessions: z.number().int().nonnegative(),
-      dwellMs: z.number().nonnegative(),
-      clicks: z.number().int().nonnegative(),
-    })
-    .default({ pageviews: 0, sessions: 0, dwellMs: 0, clicks: 0 }),
-  updatedAt: z.string().optional(),
-});
-
-export type AnalyticsStore = z.infer<typeof storeSchema>;
+import { getDb, newId, nowIso } from "@/lib/db";
 
 const MAX_SESSIONS = 400;
 const MAX_CLICKS = 500;
-
-function storePath() {
-  return path.join(process.cwd(), "data", "analytics.json");
-}
-
-export function readAnalyticsStore(): AnalyticsStore {
-  const file = storePath();
-  if (!fs.existsSync(file)) {
-    return storeSchema.parse({});
-  }
-  try {
-    return storeSchema.parse(JSON.parse(fs.readFileSync(file, "utf8")));
-  } catch {
-    return storeSchema.parse({});
-  }
-}
-
-function writeAnalyticsStore(data: AnalyticsStore) {
-  const parsed = storeSchema.parse(data);
-  const file = storePath();
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  const tmp = `${file}.${process.pid}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(parsed) + "\n", "utf8");
-  fs.renameSync(tmp, file);
-  return parsed;
-}
 
 export function normalizeAnalyticsPath(raw: string): string {
   try {
@@ -88,133 +19,246 @@ export function normalizeAnalyticsPath(raw: string): string {
   }
 }
 
-function pruneSessions(store: AnalyticsStore) {
-  const entries = Object.entries(store.sessions).sort(
-    (a, b) => Date.parse(b[1].lastAt) - Date.parse(a[1].lastAt),
-  );
-  if (entries.length <= MAX_SESSIONS) return;
-  store.sessions = Object.fromEntries(entries.slice(0, MAX_SESSIONS));
-}
+type IngestEvent =
+  | { type: "pageview"; path: string; at?: string }
+  | { type: "heartbeat"; path: string; ms: number; at?: string }
+  | { type: "click"; path: string; target: string; at?: string };
 
-export function ingestAnalyticsBatch(input: {
+export async function ingestAnalyticsBatch(input: {
   sessionId: string;
   userId?: string;
   userLabel?: string;
-  events: Array<
-    | { type: "pageview"; path: string; at?: string }
-    | { type: "heartbeat"; path: string; ms: number; at?: string }
-    | { type: "click"; path: string; target: string; at?: string }
-  >;
-}) {
-  const store = readAnalyticsStore();
-  const now = new Date().toISOString();
+  events: IngestEvent[];
+}): Promise<void> {
   const sid = input.sessionId.slice(0, 64);
-  if (!sid) return store;
+  if (!sid) return;
+  const now = nowIso();
+  const db = await getDb();
 
-  let session = store.sessions[sid];
-  if (!session) {
-    session = {
-      firstAt: now,
-      lastAt: now,
-      dwellMs: 0,
-      paths: [],
-      pageviews: 0,
-    };
-    store.totals.sessions += 1;
-  }
-  if (input.userId) session.userId = input.userId.slice(0, 80);
-  if (input.userLabel) session.userLabel = input.userLabel.slice(0, 80);
+  await db.transaction().execute(async (trx) => {
+    let session = await trx
+      .selectFrom("analytics_sessions")
+      .selectAll()
+      .where("id", "=", sid)
+      .executeTakeFirst();
 
-  for (const event of input.events.slice(0, 40)) {
-    const pathName = normalizeAnalyticsPath(event.path);
-    if (!pathName) continue;
-    const at = event.at && !Number.isNaN(Date.parse(event.at)) ? event.at : now;
-
-    if (!store.pages[pathName]) {
-      store.pages[pathName] = { views: 0, dwellMs: 0, clicks: 0 };
+    let isNewSession = false;
+    if (!session) {
+      isNewSession = true;
+      session = {
+        id: sid,
+        first_at: now,
+        last_at: now,
+        dwell_ms: 0,
+        pageviews: 0,
+        user_id: null,
+        user_label: null,
+        paths: "[]",
+      };
     }
-    const page = store.pages[pathName]!;
 
-    if (event.type === "pageview") {
-      page.views += 1;
-      store.totals.pageviews += 1;
-      session.pageviews += 1;
-      if (!session.paths.includes(pathName)) {
-        session.paths = [...session.paths, pathName].slice(-40);
+    const paths = new Set<string>(JSON.parse(session.paths) as string[]);
+    let sessionDwell = 0;
+    let sessionViews = 0;
+    let lastAt = session.last_at;
+    let totalViews = 0;
+    let totalDwell = 0;
+    let totalClicks = 0;
+
+    for (const event of input.events.slice(0, 40)) {
+      const pathName = normalizeAnalyticsPath(event.path);
+      if (!pathName) continue;
+      const at =
+        event.at && !Number.isNaN(Date.parse(event.at)) ? event.at : now;
+
+      let views = 0;
+      let dwell = 0;
+      let clicks = 0;
+      if (event.type === "pageview") {
+        views = 1;
+        sessionViews += 1;
+        totalViews += 1;
+        paths.add(pathName);
+      } else if (event.type === "heartbeat") {
+        dwell = Math.min(Math.max(0, event.ms), 120_000);
+        sessionDwell += dwell;
+        totalDwell += dwell;
+      } else if (event.type === "click") {
+        clicks = 1;
+        totalClicks += 1;
+        await trx
+          .insertInto("analytics_clicks")
+          .values({
+            id: newId(),
+            at,
+            path: pathName,
+            target: event.target.slice(0, 200),
+            session_id: sid,
+            user_id: input.userId?.slice(0, 80) ?? session.user_id,
+          })
+          .execute();
       }
-    } else if (event.type === "heartbeat") {
-      const ms = Math.min(Math.max(0, event.ms), 120_000);
-      page.dwellMs += ms;
-      session.dwellMs += ms;
-      store.totals.dwellMs += ms;
-    } else if (event.type === "click") {
-      const target = event.target.slice(0, 200);
-      page.clicks += 1;
-      store.totals.clicks += 1;
-      store.clicks.unshift({
-        at,
-        path: pathName,
-        target,
-        sessionId: sid,
-        userId: session.userId,
-      });
+
+      await trx
+        .insertInto("analytics_pages")
+        .values({ path: pathName, views, dwell_ms: dwell, clicks })
+        .onConflict((oc) =>
+          oc.column("path").doUpdateSet((eb) => ({
+            views: eb("analytics_pages.views", "+", views),
+            dwell_ms: eb("analytics_pages.dwell_ms", "+", dwell),
+            clicks: eb("analytics_pages.clicks", "+", clicks),
+          })),
+        )
+        .execute();
+
+      if (at > lastAt) lastAt = at;
     }
 
-    session.lastAt = at;
-  }
+    await trx
+      .insertInto("analytics_sessions")
+      .values({
+        id: sid,
+        first_at: session.first_at,
+        last_at: lastAt,
+        dwell_ms: session.dwell_ms + sessionDwell,
+        pageviews: session.pageviews + sessionViews,
+        user_id: input.userId?.slice(0, 80) ?? session.user_id,
+        user_label: input.userLabel?.slice(0, 80) ?? session.user_label,
+        paths: JSON.stringify([...paths].slice(-40)),
+      })
+      .onConflict((oc) =>
+        oc.column("id").doUpdateSet((eb) => ({
+          last_at: lastAt,
+          dwell_ms: eb("analytics_sessions.dwell_ms", "+", sessionDwell),
+          pageviews: eb("analytics_sessions.pageviews", "+", sessionViews),
+          user_id: input.userId?.slice(0, 80) ?? session!.user_id,
+          user_label: input.userLabel?.slice(0, 80) ?? session!.user_label,
+          paths: JSON.stringify([...paths].slice(-40)),
+        })),
+      )
+      .execute();
 
-  store.sessions[sid] = session;
-  store.clicks = store.clicks.slice(0, MAX_CLICKS);
-  pruneSessions(store);
-  store.updatedAt = now;
-  return writeAnalyticsStore(store);
+    await trx
+      .insertInto("analytics_totals")
+      .values({
+        id: 1,
+        pageviews: totalViews,
+        sessions: isNewSession ? 1 : 0,
+        dwell_ms: totalDwell,
+        clicks: totalClicks,
+        updated_at: now,
+      })
+      .onConflict((oc) =>
+        oc.column("id").doUpdateSet((eb) => ({
+          pageviews: eb("analytics_totals.pageviews", "+", totalViews),
+          sessions: eb(
+            "analytics_totals.sessions",
+            "+",
+            isNewSession ? 1 : 0,
+          ),
+          dwell_ms: eb("analytics_totals.dwell_ms", "+", totalDwell),
+          clicks: eb("analytics_totals.clicks", "+", totalClicks),
+          updated_at: now,
+        })),
+      )
+      .execute();
+
+    // Retention caps: keep the freshest N rows, drop the tail.
+    await trx
+      .deleteFrom("analytics_clicks")
+      .where("id", "in", (qb) =>
+        qb
+          .selectFrom("analytics_clicks")
+          .select("id")
+          .orderBy("at", "desc")
+          .offset(MAX_CLICKS)
+          .limit(1_000_000),
+      )
+      .execute();
+    await trx
+      .deleteFrom("analytics_sessions")
+      .where("id", "in", (qb) =>
+        qb
+          .selectFrom("analytics_sessions")
+          .select("id")
+          .orderBy("last_at", "desc")
+          .offset(MAX_SESSIONS)
+          .limit(1_000_000),
+      )
+      .execute();
+  });
 }
 
-export function analyticsSummary(store = readAnalyticsStore()) {
-  const topPages = Object.entries(store.pages)
-    .map(([path, s]) => ({
-      path,
-      views: s.views,
-      clicks: s.clicks,
-      dwellHours: Math.round((s.dwellMs / 3_600_000) * 100) / 100,
-    }))
-    .sort((a, b) => b.views - a.views)
-    .slice(0, 25);
+export async function analyticsSummary() {
+  const db = await getDb();
 
-  const activeSessions = Object.entries(store.sessions)
-    .map(([id, s]) => ({
-      id,
-      userId: s.userId,
-      userLabel: s.userLabel,
-      firstAt: s.firstAt,
-      lastAt: s.lastAt,
-      dwellHours: Math.round((s.dwellMs / 3_600_000) * 100) / 100,
-      pageviews: s.pageviews,
-      paths: s.paths,
-    }))
-    .sort((a, b) => Date.parse(b.lastAt) - Date.parse(a.lastAt))
-    .slice(0, 40);
+  const [totalsRow, pageRows, sessionRows, clickRows] = await Promise.all([
+    db.selectFrom("analytics_totals").selectAll().where("id", "=", 1).executeTakeFirst(),
+    db
+      .selectFrom("analytics_pages")
+      .selectAll()
+      .orderBy("views", "desc")
+      .limit(25)
+      .execute(),
+    db
+      .selectFrom("analytics_sessions")
+      .selectAll()
+      .orderBy("last_at", "desc")
+      .limit(40)
+      .execute(),
+    db
+      .selectFrom("analytics_clicks")
+      .selectAll()
+      .orderBy("at", "desc")
+      .limit(40)
+      .execute(),
+  ]);
 
-  const topClicks = [...store.clicks]
-    .slice(0, 40)
-    .reduce<Record<string, number>>((acc, c) => {
-      const key = `${c.path} → ${c.target}`;
-      acc[key] = (acc[key] || 0) + 1;
-      return acc;
-    }, {});
+  const totals = {
+    pageviews: Number(totalsRow?.pageviews ?? 0),
+    sessions: Number(totalsRow?.sessions ?? 0),
+    dwellMs: Number(totalsRow?.dwell_ms ?? 0),
+    clicks: Number(totalsRow?.clicks ?? 0),
+  };
+
+  const topClicks = clickRows.reduce<Record<string, number>>((acc, c) => {
+    const key = `${c.path} → ${c.target}`;
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
 
   return {
     totals: {
-      ...store.totals,
-      dwellHours: Math.round((store.totals.dwellMs / 3_600_000) * 100) / 100,
+      ...totals,
+      dwellHours: Math.round((totals.dwellMs / 3_600_000) * 100) / 100,
     },
-    topPages,
-    activeSessions,
+    topPages: pageRows.map((p) => ({
+      path: p.path,
+      views: Number(p.views),
+      clicks: Number(p.clicks),
+      dwellHours: Math.round((Number(p.dwell_ms) / 3_600_000) * 100) / 100,
+    })),
+    activeSessions: sessionRows.map((s) => ({
+      id: s.id,
+      userId: s.user_id ?? undefined,
+      userLabel: s.user_label ?? undefined,
+      firstAt: s.first_at,
+      lastAt: s.last_at,
+      dwellHours: Math.round((Number(s.dwell_ms) / 3_600_000) * 100) / 100,
+      pageviews: Number(s.pageviews),
+      paths: JSON.parse(s.paths) as string[],
+    })),
     topClickTargets: Object.entries(topClicks)
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 20),
-    recentClicks: store.clicks.slice(0, 30),
-    updatedAt: store.updatedAt,
+    recentClicks: clickRows.slice(0, 30).map((c) => ({
+      at: c.at,
+      path: c.path,
+      target: c.target,
+      sessionId: c.session_id,
+      userId: c.user_id ?? undefined,
+    })),
+    updatedAt: totalsRow?.updated_at ?? undefined,
   };
 }

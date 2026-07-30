@@ -1,31 +1,19 @@
-import fs from "node:fs";
-import path from "node:path";
-import Database from "better-sqlite3";
-import { createPool, type Pool } from "mysql2/promise";
+import type BetterSqlite3 from "better-sqlite3";
+import type { Pool } from "pg";
+import { getDriver } from "@/lib/db";
 
-export type AtriumIdDatabase = Database.Database | Pool;
+export type AtriumIdDatabase = BetterSqlite3.Database | Pool;
 
 /**
- * Atrium ID database factory.
- * - Default / local: SQLite file (ATRIUM_DB_PATH)
- * - Production MariaDB/MySQL: ATRIUM_DATABASE_URL=mysql://...
+ * Atrium ID shares the app's single database connection:
+ * - Default / local: SQLite file (ATRIUM_DB_PATH, WAL)
+ * - Production: Postgres via ATRIUM_DATABASE_URL / DATABASE_URL
  */
 export function createAtriumIdDatabase(): AtriumIdDatabase {
-  const mysqlUrl = process.env.ATRIUM_DATABASE_URL || process.env.DATABASE_URL;
-  if (mysqlUrl && mysqlUrl.startsWith("mysql")) {
-    return createPool(mysqlUrl);
-  }
-
-  const dbPath =
-    process.env.ATRIUM_DB_PATH ||
-    path.join(process.cwd(), "data", "atriumid.sqlite");
-  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-  const sqlite = new Database(dbPath);
-  sqlite.pragma("journal_mode = WAL");
-  sqlite.pragma("foreign_keys = ON");
-  return sqlite;
+  const driver = getDriver();
+  return driver.kind === "postgres" ? driver.pool : driver.sqlite;
 }
 
-export function isMysql(db: AtriumIdDatabase): db is Pool {
-  return typeof (db as Pool).query === "function" && !("pragma" in db);
+export function isPostgres(db: AtriumIdDatabase): db is Pool {
+  return getDriver().kind === "postgres" && !("pragma" in db);
 }

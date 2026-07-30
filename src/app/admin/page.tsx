@@ -8,8 +8,8 @@ export default async function AdminHomePage() {
   const session = await requireStaff();
   const roles = roleList(session);
   const overrides = readSiteOverrides();
-  const mod = readModerationStore();
-  const audit = readAudit(5);
+  const mod = await readModerationStore();
+  const audit = await readAudit(5);
 
   const cards: Array<{ href: string; title: string; desc: string }> = [
     ...(roles.includes("admin")

@@ -89,8 +89,8 @@ export async function saveSiteOrganization(input: unknown) {
     updatedBy: session.user.id,
   };
 
-  writeSiteOverrides(next);
-  appendAudit({
+  await writeSiteOverrides(next);
+  await appendAudit({
     actorId: session.user.id,
     actorLabel: label,
     action: "site.organize",
@@ -112,11 +112,11 @@ export async function resetSiteOrganization() {
   if (!roles.includes("admin")) {
     throw new Error("FORBIDDEN_SITE_UPDATE");
   }
-  writeSiteOverrides({
+  await writeSiteOverrides({
     updatedAt: new Date().toISOString(),
     updatedBy: session.user.id,
   });
-  appendAudit({
+  await appendAudit({
     actorId: session.user.id,
     actorLabel: label,
     action: "site.reset",
@@ -138,14 +138,14 @@ export async function warnUser(raw: unknown) {
   const parsed = warnInput.safeParse(raw);
   if (!parsed.success) throw new Error(formatZodError(parsed.error));
   const input = parsed.data;
-  const row = addWarning({
+  const row = await addWarning({
     userId: input.userId,
     username: input.username,
     reason: input.reason,
     by: session.user.id,
     byLabel: label,
   });
-  appendAudit({
+  await appendAudit({
     actorId: session.user.id,
     actorLabel: label,
     action: "mod.warn",
@@ -179,7 +179,7 @@ export async function banUserAction(raw: unknown) {
     },
     headers: await headers(),
   });
-  appendAudit({
+  await appendAudit({
     actorId: session.user.id,
     actorLabel: label,
     action: "mod.ban",
@@ -199,7 +199,7 @@ export async function unbanUserAction(userId: string) {
     body: { userId: id },
     headers: await headers(),
   });
-  appendAudit({
+  await appendAudit({
     actorId: session.user.id,
     actorLabel: label,
     action: "mod.unban",
@@ -223,7 +223,7 @@ export async function purgeUserContent(raw: unknown) {
   const parsed = purgeInput.safeParse(raw);
   if (!parsed.success) throw new Error(formatZodError(parsed.error));
   const input = parsed.data;
-  const row = queuePurge({
+  const row = await queuePurge({
     userId: input.userId,
     username: input.username,
     scope: input.scope,
@@ -231,7 +231,7 @@ export async function purgeUserContent(raw: unknown) {
     byLabel: label,
     note: input.note,
   });
-  appendAudit({
+  await appendAudit({
     actorId: session.user.id,
     actorLabel: label,
     action: "mod.purge_queue",
@@ -275,7 +275,7 @@ export async function setUserRoleAction(
     body: { userId: id, role: r },
     headers: await headers(),
   });
-  appendAudit({
+  await appendAudit({
     actorId: session.user.id,
     actorLabel: label,
     action: "admin.set_role",
@@ -289,5 +289,5 @@ export async function setUserRoleAction(
 
 export async function getModerationSnapshot() {
   await actorContext();
-  return readModerationStore();
+  return await readModerationStore();
 }

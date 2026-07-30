@@ -8,7 +8,7 @@ import {
   admin,
 } from "better-auth/plugins";
 import { passkey } from "@better-auth/passkey";
-import { createAtriumIdDatabase, isMysql } from "./db";
+import { createAtriumIdDatabase, isPostgres } from "./db";
 import { ac, roles } from "./permissions";
 import { config as siteConfig } from "@/lib/content";
 
@@ -101,6 +101,6 @@ export const auth = betterAuth({
 
 export type Session = typeof auth.$Infer.Session;
 
-export function atriumIdDriver(): "mysql" | "sqlite" {
-  return isMysql(database) ? "mysql" : "sqlite";
+export function atriumIdDriver(): "postgres" | "sqlite" {
+  return isPostgres(database) ? "postgres" : "sqlite";
 }

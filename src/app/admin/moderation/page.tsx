@@ -4,7 +4,7 @@ import { readModerationStore } from "@/lib/admin/moderation-store";
 
 export default async function AdminModerationPage() {
   await requireStaff({ redirectTo: "/admin/moderation" });
-  const store = readModerationStore();
+  const store = await readModerationStore();
   return (
     <div className="space-y-6">
       <div>

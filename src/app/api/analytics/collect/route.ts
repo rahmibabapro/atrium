@@ -43,6 +43,6 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
-  ingestAnalyticsBatch(parsed.data);
+  await ingestAnalyticsBatch(parsed.data);
   return NextResponse.json({ ok: true });
 }

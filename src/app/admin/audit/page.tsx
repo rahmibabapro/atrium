@@ -3,7 +3,7 @@ import { requireStaff } from "@/lib/admin/guard";
 
 export default async function AdminAuditPage() {
   await requireStaff({ redirectTo: "/admin/audit" });
-  const events = readAudit(200);
+  const events = await readAudit(200);
   return (
     <div className="space-y-6">
       <div>
