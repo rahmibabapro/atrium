@@ -1,6 +1,10 @@
-# Atrium
-
-**Fork it. Brand it. Ship a community.**
+<div align="center">
+  <img src="public/brand/logo-mark.svg" alt="Atrium arch mark" width="88" height="88" />
+  <br />
+  <img src="public/brand/wordmark.svg" alt="Atrium Foundation" width="280" />
+  <p><strong>Fork it. Brand it. Ship a community.</strong></p>
+  <a href="https://github.com/rahmibabapro/atrium/actions/workflows/ci.yml"><img src="https://github.com/rahmibabapro/atrium/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+</div>
 
 Atrium is an open Next.js foundation for community websites — a real forum
 engine, wiki, members, notifications, full-text search, staff control plane,
@@ -8,7 +12,10 @@ and passkey-first identity — wired so you change a **site pack**, not the
 engine. It is built to be the modern answer to XenForo-class forum suites,
 including a first-party XenForo importer with URL preservation.
 
-<img src="public/brand/logo-mark.png" alt="Atrium mark" width="96" height="96" />
+![Solecraft Atelier demo running on Atrium](docs/atrium-home.jpg)
+
+The included **Solecraft Atelier** site pack demonstrates how the same engine can become
+a complete branded product without editing the platform core.
 
 ## Why Atrium
 
@@ -138,5 +145,6 @@ into this public base. Pull engine updates from Atrium as an upstream remote.
 
 ## License
 
-See repository license (or add one before publishing). Contributions welcome
-once the public repo is live.
+Atrium is currently source-available for evaluation. A redistribution and contribution
+license has not been selected yet, so no permission to copy, modify, or distribute the
+code is granted beyond rights provided by applicable law.
