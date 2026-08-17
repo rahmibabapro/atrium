@@ -1,0 +1,38 @@
+name: Feature request
+description: Propose a focused improvement to Atrium
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or operator problem should Atrium solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed outcome
+      description: Describe the desired behavior without prescribing unnecessary implementation details.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Area
+      options:
+        - Forum
+        - Identity
+        - Moderation
+        - Search and notifications
+        - Site packs and branding
+        - Migration
+        - Operations and deployment
+    validations:
+      required: true
