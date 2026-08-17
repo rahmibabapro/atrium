@@ -6,7 +6,7 @@
   <a href="https://github.com/rahmibabapro/atrium/actions/workflows/ci.yml"><img src="https://github.com/rahmibabapro/atrium/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
 </div>
 
-Atrium is an open Next.js foundation for community websites — a real forum
+Atrium is a publicly developed Next.js foundation for community websites — a real forum
 engine, wiki, members, notifications, full-text search, staff control plane,
 and passkey-first identity — wired so you change a **site pack**, not the
 engine. It is built to be the modern answer to XenForo-class forum suites,
